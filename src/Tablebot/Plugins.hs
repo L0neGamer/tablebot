@@ -27,6 +27,7 @@ import Tablebot.Plugins.RollDice (rollPlugin)
 import Tablebot.Plugins.Say (sayPlugin)
 import Tablebot.Plugins.Shibe (shibePlugin)
 import Tablebot.Plugins.Welcome (welcomePlugin)
+import Tablebot.Plugins.BrokenCase (brokenPlugin)
 
 -- Use long list format to make additions and removals non-conflicting on git PRs
 plugins :: [CompiledPlugin]
@@ -41,7 +42,8 @@ plugins =
       compilePlugin reminderPlugin,
       compilePlugin sayPlugin,
       compilePlugin rollPlugin,
-      compilePlugin welcomePlugin
+      compilePlugin welcomePlugin,
+      compilePlugin brokenPlugin
     ]
 
 -- | @addAdministrationPlugin@ is needed to allow the administration plugin to be aware of the list of current plugins
