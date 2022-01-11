@@ -9,7 +9,7 @@
 -- Portability : POSIX
 --
 -- TemplateHaskell helpers for SmartCommands.
-module Tablebot.Utility.SmartCommandTH (canParseInstances, makeChoiceAccessors) where
+module Tablebot.Utility.SmartParserTH (canParseInstances, makeChoiceAccessors) where
 
 import Data.List (intersperse)
 import Language.Haskell.TH

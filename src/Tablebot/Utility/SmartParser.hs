@@ -22,7 +22,7 @@ import Data.Void (Void)
 import Discord.Types (Message)
 import GHC.TypeLits
 import Tablebot.Utility.Parser
-import Tablebot.Utility.SmartCommandTH
+import Tablebot.Utility.SmartParserTH
 import Tablebot.Utility.Types (EnvDatabaseDiscord, Parser)
 import Text.Megaparsec
 
@@ -107,14 +107,10 @@ type family AnyOf (xs :: [*]) :: * where
   AnyOf '[] = Void
   AnyOf (x ': xs) = EitherS x (AnyOf xs)
 
-type family Depth y where
-  Depth (Either _ Void) = 1
-  Depth (Either _ xs) = 1 + Depth xs
+type AnyOf1 a b = EitherS a b
 
 -- Generates patterns for AnyOf accessors.
 $(makeChoiceAccessors 10)
-
-type AnyOf1 a b = EitherS a Void
 
 {-# COMPLETE Choice0 :: AnyOf1 #-}
 
