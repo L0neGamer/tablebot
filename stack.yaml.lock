@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: discord-haskell-1.8.5@sha256:56265067a27de25c8f372b3ecf3c282d7c1927503ba59a5b0a9d01fd81e268a0,3562
+    hackage: discord-haskell-1.10.0@sha256:84a8efffdd12a5ab08540ed06628c30a344a39579735b813f1418d25f8414d95,3631
     pantry-tree:
-      size: 2107
-      sha256: 47930963df17ed0e1946b058b55c5b32c9b93d062124ed72d8fefac61e307cf5
+      size: 2109
+      sha256: c8305745ecf7c2149ed8df5adc19a451d4a098317240a38fd343ecfbd424cfab
   original:
-    hackage: discord-haskell-1.8.5
+    hackage: discord-haskell-1.10.0
 - completed:
     hackage: emoji-0.1.0.2@sha256:d995572a5c7dcd28f98eb15c6e387a7b3bda1ac2477ab0d9dba8580d5d7b161f,1273
     pantry-tree:
@@ -60,6 +60,27 @@ packages:
       sha256: 7182cd5700a20bf8a153d531842f08b7c0f744943813d9b87d2065c301fe52ec
   original:
     hackage: esqueleto-3.4.1.1
+- completed:
+    hackage: duckling-0.2.0.0@sha256:84becd4e48ee3676cdd6fe5745a77ee60e365ea730cd759610c8a7738f3eb4a6,60543
+    pantry-tree:
+      size: 74021
+      sha256: e3d7464dc3b30bc64787288cdff3fd4b53fde8a3829d0ee0e62f3b8a37ba28b3
+  original:
+    hackage: duckling-0.2.0.0
+- completed:
+    hackage: dependent-sum-0.7.1.0@sha256:2943074c14ba06401d5bf47aeb71ed3a3f68da4d3db3ae4ca9ac02f35458fc34,2147
+    pantry-tree:
+      size: 290
+      sha256: 64370d3d5a86df30b4460e55d980074fe7577eef0385101a31da8e2de50b8813
+  original:
+    hackage: dependent-sum-0.7.1.0
+- completed:
+    hackage: constraints-extras-0.3.1.0@sha256:c70fcf437e1d640cfd50a8eda1db47a64e49c96857e08fd0d8c438327d908ac1,1846
+    pantry-tree:
+      size: 595
+      sha256: f29920355b21ef7a7218573591aa740b01b3d1fb3b0bbd66e2f726d091d56fb2
+  original:
+    hackage: constraints-extras-0.3.1.0
 snapshots:
 - completed:
     size: 586296

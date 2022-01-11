@@ -1,5 +1,5 @@
 name:                tablebot
-version:             0.1.0.0
+version:             0.3.1
 github:              "WarwickTabletop/tablebot"
 license:             MIT
 author:              "Warwick Tabletop"
@@ -24,6 +24,7 @@ dependencies:
 - discord-haskell
 - emoji
 - text
+- text-icu
 - transformers
 - load-env
 - megaparsec
@@ -40,11 +41,24 @@ dependencies:
 - http-conduit
 - raw-strings-qq
 - template-haskell
+- timezone-olson
+- duckling
+- unordered-containers
 - bytestring
 - req
 - http-client
 - data-default
 - exception-transformers
+- resourcet
+- resource-pool
+- containers
+- th-printf
+- mtl
+- safe
+- edit-distance
+- unliftio
+- split
+- regex-pcre
 
 library:
   source-dirs: src
@@ -67,6 +81,15 @@ library:
   - FlexibleInstances
   - DeriveGeneric
   - TypeApplications
+  - MultiWayIf
+  - TupleSections
+  - ConstraintKinds
+  - RecordWildCards
+  - ScopedTypeVariables
+  - TypeOperators
+  - RankNTypes
+  ghc-options:
+  - -Wall
 
 
 executables:

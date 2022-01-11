@@ -18,9 +18,18 @@ import GHC.Generics (Generic)
 import Network.HTTP.Conduit (Response (responseBody), parseRequest)
 import Network.HTTP.Simple (addRequestHeader, httpLBS)
 import System.Environment (lookupEnv)
-import Tablebot.Plugin.Discord (sendMessage)
-import Tablebot.Plugin.SmartCommand (parseComm)
-import Tablebot.Plugin.Types (Command (Command), HelpPage (HelpPage), Plugin (..), RequiredPermission (None), plug)
+import Tablebot.Utility.Discord (Message, sendMessage)
+import Tablebot.Utility.SmartParser (parseComm)
+import Tablebot.Utility.Types
+  ( Command,
+    DatabaseDiscord,
+    EnvCommand (Command),
+    EnvPlugin (..),
+    HelpPage (HelpPage),
+    Plugin,
+    RequiredPermission (None),
+    plug,
+  )
 
 -- | @CatAPI@ is the basic data type for the JSON object that thecatapi returns
 data CatAPI = CatAPI
@@ -40,11 +49,13 @@ cat :: Command
 cat =
   Command
     "cat"
-    ( parseComm $ \m -> do
-        r <- liftIO (getCatAPI <&> getCat)
-        _ <- sendMessage m r
-        return ()
-    )
+    (parseComm sendCat)
+    []
+  where
+    sendCat :: Message -> DatabaseDiscord ()
+    sendCat m = do
+      r <- liftIO (getCatAPI <&> getCat)
+      sendMessage m r
 
 -- | @getCatAPI@ is a helper function that turns gets a JSON object that may
 -- contain a cat image. Uses https://docs.thecatapi.com/ for cats.
@@ -72,8 +83,8 @@ getCat esc = case esc of
 
 -- | @catHelp@ has the help text for the cat command
 catHelp :: HelpPage
-catHelp = HelpPage "cat" "displays an image of a cat" "**Cat**\nGets a random cat image using <https://thecatapi.com/>.\n\n*Usage:* `cat`" [] None
+catHelp = HelpPage "cat" [] "displays an image of a cat" "**Cat**\nGets a random cat image using <https://thecatapi.com/>.\n\n*Usage:* `cat`" [] None
 
 -- | @catPlugin@ assembles these commands into a plugin containing cat
 catPlugin :: Plugin
-catPlugin = plug {commands = [cat], helpPages = [catHelp]}
+catPlugin = (plug "cats") {commands = [cat], helpPages = [catHelp]}

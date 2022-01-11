@@ -9,28 +9,29 @@
 -- A command that outputs its input.
 module Tablebot.Plugins.Say (sayPlugin) where
 
-import Data.Text (Text, pack)
-import Discord.Types
-import Tablebot.Plugin
-import Tablebot.Plugin.Discord (Message, sendMessage)
-import Tablebot.Plugin.Parser (untilEnd)
-import Text.Megaparsec
-import Text.RawString.QQ
+import Data.Text (pack)
+import Discord.Types (Message (messageAuthor), User (userId))
+import Tablebot.Utility
+import Tablebot.Utility.Discord (sendMessage)
+import Tablebot.Utility.Parser (untilEnd)
+import Text.RawString.QQ (r)
 
 -- | @say@ outputs its input.
 say :: Command
-say = Command "say" saycomm
+say = Command "say" saycomm []
   where
     saycomm :: Parser (Message -> DatabaseDiscord ())
     saycomm = do
       input <- untilEnd
       return $ \m -> do
-        sendMessage m $ pack $ "> " ++ input ++ "\n - <@" ++ (show $ userId $ messageAuthor m) ++ ">"
+        let quoted = unlines . (("> " ++) <$>) . lines
+        sendMessage m $ pack $ quoted input ++ " - <@" ++ show (userId $ messageAuthor m) ++ ">"
 
 sayHelp :: HelpPage
 sayHelp =
   HelpPage
     "say"
+    []
     "make the bot speak"
     [r|**Say**
 Repeat the input.
@@ -41,4 +42,4 @@ Repeat the input.
 
 -- | @sayPlugin@ assembles the command into a plugin.
 sayPlugin :: Plugin
-sayPlugin = plug {commands = [say], helpPages = [sayHelp]}
+sayPlugin = (plug "say") {commands = [say], helpPages = [sayHelp]}
