@@ -69,6 +69,7 @@ dependencies:
   - regex-pcre
   - distribution
   - MonadRandom
+  - exception-transformers
 
 
 library:

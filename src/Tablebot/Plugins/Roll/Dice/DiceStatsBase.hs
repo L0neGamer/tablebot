@@ -10,11 +10,15 @@
 -- `Distribution`s.
 module Tablebot.Plugins.Roll.Dice.DiceStatsBase
   ( Distribution,
+    MonadExperiment (..),
+    nullDistribution,
     distributionByteString,
   )
 where
 
 import Codec.Picture (PngSavable (encodePng))
+import Control.Monad.Exception
+import Control.Monad.Trans
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Distribution as D
@@ -27,11 +31,45 @@ import Diagrams.Backend.Rasterific
 import Graphics.Rendering.Chart.Axis.Int
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 import Graphics.Rendering.Chart.Backend.Types
-import Graphics.Rendering.Chart.Easy
+import Graphics.Rendering.Chart.Easy hiding (from)
 import Tablebot.Plugins.Roll.Dice.DiceEval (evaluationException)
 
 -- | A wrapper type for mapping values to their probabilities.
 type Distribution = D.Distribution Integer
+
+class Monad m => MonadExperiment m where
+  from :: Ord a => D.Distribution a -> m a
+  run :: Ord a => m a -> m (D.Distribution a)
+
+instance MonadExperiment D.Experiment where
+  from = D.from
+  run = return . D.run
+
+instance MonadExperiment m => MonadExperiment (ExceptionT m) where
+  from = lift . from
+  run a = ExceptionT $ runExceptionT $ run a
+
+-- newtype ExperimentT m a = ExperimentT {runExperimentT :: m (D.Experiment a)}
+
+-- instance (Monad m) => Monad (ExperimentT m) where
+--   return = ExperimentT . return . return
+--   ExperimentT a >>= f = ExperimentT $ do
+--     a' <- a
+--     return $ do
+--       a'' <- a'
+--       runExperimentT $ f a''
+--     -- join $ (runExperimentT . f) <$> a'
+--     -- a'' <- runExperimentT $ f (a' D.!)
+--     -- return $ a' D.!> a''
+
+-- instance Monad m => MonadExperiment (ExperimentT m) where
+--   from = ExperimentT . return . from
+--   run (ExperimentT a) = ExperimentT $ do
+--     a' <- a
+--     return $ run a'
+
+nullDistribution :: Distribution
+nullDistribution = D.assuming (/= 0) $ D.uniform [0]
 
 -- | Default x and y values for the output chart.
 diagramX, diagramY :: Double
