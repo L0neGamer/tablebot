@@ -21,6 +21,7 @@ import Tablebot.Plugins.Alias (alias)
 import Tablebot.Plugins.Basic (basic)
 import Tablebot.Plugins.Cats (cat)
 import Tablebot.Plugins.Dogs (dog)
+import Tablebot.Plugins.Embed (embeds)
 import Tablebot.Plugins.Flip (flips)
 import Tablebot.Plugins.Fox (fox)
 import Tablebot.Plugins.Netrunner (netrunner)
@@ -50,7 +51,8 @@ allPlugins =
     says,
     suggests,
     roll,
-    welcome
+    welcome,
+    embeds
   ]
 
 -- | @addAdministrationPlugin@ is needed to allow the administration plugin to be aware of the list of current plugins

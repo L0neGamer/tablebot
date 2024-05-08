@@ -74,6 +74,10 @@ quotedWithout excl = quotedWith '"' <|> quotedWith '\''
         (some $ satisfy (`notElem` c : excl))
         <?> "Couldn't get quote!"
 
+quoteWith :: String -> String -> Parser String
+quoteWith openQuote closeQuote =
+  (chunk (T.pack openQuote) <?> "open quote “" ++ openQuote ++ "” not found") *> manyTill anySingle (chunk (T.pack closeQuote) <?> "close quote “" ++ closeQuote ++ " not found")
+
 -- | @word@ parses a single word of letters only.
 word :: Parser String
 word = some letter
