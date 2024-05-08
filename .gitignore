@@ -7,3 +7,4 @@ database*
 stack.yaml.lock
 .gitattributes
 .vscode
+dist-newstyle/
