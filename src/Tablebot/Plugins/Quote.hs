@@ -24,7 +24,7 @@ import Data.Time (getCurrentTime)
 import Data.Time.Calendar (Year, periodFromDay, periodToDay)
 import Data.Time.Clock.System (SystemTime (systemSeconds), getSystemTime, systemToUTCTime)
 import Data.Word
-import Database.Persist.Sqlite (Entity (entityKey), Filter, SelectOpt (LimitTo, OffsetBy), entityVal, fromSqlKey, toSqlKey, (==.))
+import Database.Persist.Sqlite (Entity (entityKey), SelectOpt (LimitTo, OffsetBy), entityVal, fromSqlKey, toSqlKey, (==.))
 import qualified Database.Persist.Sqlite as Sql
 import Database.Persist.TH
 import Discord (restCall)
@@ -185,10 +185,14 @@ showQ qId m = do
     Just q -> renderQuoteMessage q qId Nothing m
     Nothing -> return $ messageDetailsBasic "Couldn't get that quote!"
 
+data QuoteFilter
+  = AnyQuote
+  | AuthoredBy Text
+
 -- | @randomQuote@, which looks for a message of the form @!quote random@,
 -- selects a random quote from the database and responds with that quote.
 randomQ :: (Context m) => m -> DatabaseDiscord MessageDetails
-randomQ = filteredRandomQuote [] "Couldn't find any quotes!" (Just randomButton)
+randomQ = filteredRandomQuote AnyQuote "Couldn't find any quotes!" (Just randomButton)
   where
     randomButton = mkButton "Random quote" "quote random"
 
@@ -198,7 +202,7 @@ randomQuoteComponentRecv = ComponentRecv "random" (processComponentInteraction (
 -- | @authorQuote@, which looks for a message of the form @!quote author u@,
 -- selects a random quote from the database attributed to u and responds with that quote.
 authorQ :: (Context m) => Text -> m -> DatabaseDiscord MessageDetails
-authorQ t = filteredRandomQuote [QuoteAuthor ==. t] "Couldn't find any quotes with that author!" (Just authorButton)
+authorQ t = filteredRandomQuote (AuthoredBy t) "Couldn't find any quotes with that author!" (Just authorButton)
   where
     authorButton = mkButton "Random author quote" ("quote author " <> t)
 
@@ -208,7 +212,7 @@ authorQuoteComponentRecv = ComponentRecv "author" (processComponentInteraction (
 -- | @filteredRandomQuote@ selects a random quote that meets a
 -- given criteria, and returns that as the response, sending the user a message if the
 -- quote cannot be found.
-filteredRandomQuote :: (Context m) => [Filter Quote] -> Text -> Maybe Button -> m -> DatabaseDiscord MessageDetails
+filteredRandomQuote :: (Context m) => QuoteFilter -> Text -> Maybe Button -> m -> DatabaseDiscord MessageDetails
 filteredRandomQuote quoteFilter errorMessage mb m = catchBot (filteredRandomQuote' quoteFilter errorMessage mb m) catchBot'
   where
     catchBot' (GenericException "quote exception" _) = return $ (messageDetailsBasic errorMessage) {messageDetailsEmbeds = Just [], messageDetailsComponents = Just []}
@@ -218,15 +222,17 @@ filteredRandomQuote quoteFilter errorMessage mb m = catchBot (filteredRandomQuot
 --
 -- Throws exceptions if we can't find any quotes and if we can't find the selected
 -- quote.
-filteredRandomQuoteDb :: (MonadException m, MonadIO m) => [Filter Quote] -> Text -> Sql.SqlPersistT m (Entity Quote)
+filteredRandomQuoteDb :: (MonadException m, MonadIO m) => QuoteFilter -> Text -> Sql.SqlPersistT m (Entity Quote)
 filteredRandomQuoteDb quoteFilter errorMessage = do
   now <- liftIO getCurrentTime
   let day = utctDay now
       (year :: Year, dayOfYear) = periodFromDay day
   onlyLastThreeYears :: Bool <- randomIO
-  let qFilter =
-        quoteFilter
-          <> [QuoteTime Sql.>=. UTCTime (periodToDay (year - 3) dayOfYear) 0 | onlyLastThreeYears]
+  let qFilter = case quoteFilter of
+        AnyQuote ->
+          [QuoteTime Sql.>=. UTCTime (periodToDay (year - 3) dayOfYear) 0 | onlyLastThreeYears]
+        AuthoredBy author ->
+          [QuoteAuthor ==. author]
   num <- Sql.count qFilter
   if num == 0 -- we can't find any quotes meeting the filter
     then throwBot (GenericException "quote exception" (unpack errorMessage))
@@ -240,7 +246,7 @@ filteredRandomQuoteDb quoteFilter errorMessage = do
 -- | @filteredRandomQuote'@ selects a random quote that meets a
 -- given criteria, and returns that as the response, throwing an exception if something
 -- goes wrong.
-filteredRandomQuote' :: (Context m) => [Filter Quote] -> Text -> Maybe Button -> m -> DatabaseDiscord MessageDetails
+filteredRandomQuote' :: (Context m) => QuoteFilter -> Text -> Maybe Button -> m -> DatabaseDiscord MessageDetails
 filteredRandomQuote' quoteFilter errorMessage mb m = do
   Sql.Entity key q <- liftSql $ filteredRandomQuoteDb quoteFilter errorMessage
   renderQuoteMessage q (fromSqlKey key) mb m
