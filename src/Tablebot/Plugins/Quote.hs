@@ -13,13 +13,15 @@
 -- quotes and then @!quote show n@ a particular quote.
 module Tablebot.Plugins.Quote (quotes) where
 
-import Control.Monad (join)
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Exception (MonadException)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Aeson
 import Data.Default (Default (def))
 import Data.Functor ((<&>))
-import Data.Maybe (catMaybes, fromMaybe, listToMaybe)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Text (Text, append, pack, unpack)
+import Data.Time (getCurrentTime)
+import Data.Time.Calendar (Year, periodFromDay, periodToDay)
 import Data.Time.Clock.System (SystemTime (systemSeconds), getSystemTime, systemToUTCTime)
 import Data.Word
 import Database.Persist.Sqlite (Entity (entityKey), Filter, SelectOpt (LimitTo, OffsetBy), entityVal, fromSqlKey, toSqlKey, (==.))
@@ -31,7 +33,7 @@ import qualified Discord.Internal.Rest.Interactions as R
 import Discord.Types
 import GHC.Generics (Generic)
 import GHC.Int (Int64)
-import System.Random (randomRIO)
+import System.Random (randomIO, randomRIO)
 import Tablebot.Utility
 import Tablebot.Utility.Discord
   ( getMessage,
@@ -212,21 +214,36 @@ filteredRandomQuote quoteFilter errorMessage mb m = catchBot (filteredRandomQuot
     catchBot' (GenericException "quote exception" _) = return $ (messageDetailsBasic errorMessage) {messageDetailsEmbeds = Just [], messageDetailsComponents = Just []}
     catchBot' e = throwBot e
 
+-- | Get a random quote fitting the filter, preferring more recent quotes.
+--
+-- Throws exceptions if we can't find any quotes and if we can't find the selected
+-- quote.
+filteredRandomQuoteDb :: (MonadException m, MonadIO m) => [Filter Quote] -> Text -> Sql.SqlPersistT m (Entity Quote)
+filteredRandomQuoteDb quoteFilter errorMessage = do
+  now <- liftIO getCurrentTime
+  let day = utctDay now
+      (year :: Year, dayOfYear) = periodFromDay day
+  onlyLastThreeYears :: Bool <- randomIO
+  let qFilter =
+        quoteFilter
+          <> [QuoteTime Sql.>=. UTCTime (periodToDay (year - 3) dayOfYear) 0 | onlyLastThreeYears]
+  num <- Sql.count qFilter
+  if num == 0 -- we can't find any quotes meeting the filter
+    then throwBot (GenericException "quote exception" (unpack errorMessage))
+    else do
+      rindex <- liftIO $ randomRIO (0, num - 1)
+      quoteM <- Sql.selectFirst qFilter [OffsetBy rindex, LimitTo 1]
+      case quoteM of
+        Just e -> pure e
+        Nothing -> throwBot (GenericException "quote exception" (unpack errorMessage))
+
 -- | @filteredRandomQuote'@ selects a random quote that meets a
 -- given criteria, and returns that as the response, throwing an exception if something
 -- goes wrong.
 filteredRandomQuote' :: (Context m) => [Filter Quote] -> Text -> Maybe Button -> m -> DatabaseDiscord MessageDetails
 filteredRandomQuote' quoteFilter errorMessage mb m = do
-  num <- liftSql $ Sql.count quoteFilter
-  if num == 0 -- we can't find any quotes meeting the filter
-    then throwBot (GenericException "quote exception" (unpack errorMessage))
-    else do
-      rindex <- liftIO $ randomRIO (0, num - 1)
-      keys <- liftSql $ Sql.selectKeysList quoteFilter [OffsetBy rindex, LimitTo 1]
-      qu <- traverse (\key -> fmap (,key) <$> liftSql (Sql.get key)) $ listToMaybe keys
-      case join qu of
-        Just (q, key) -> renderQuoteMessage q (fromSqlKey key) mb m
-        Nothing -> throwBot (GenericException "quote exception" (unpack errorMessage))
+  Sql.Entity key q <- liftSql $ filteredRandomQuoteDb quoteFilter errorMessage
+  renderQuoteMessage q (fromSqlKey key) mb m
 
 -- | @addQuote@, which looks for a message of the form
 -- @!quote add "quoted text" - author@, and then stores said quote in the
